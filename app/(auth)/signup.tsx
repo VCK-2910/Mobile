@@ -14,6 +14,7 @@ import { useRouter } from "expo-router";
 import { useGlobalContext } from "../../context/GloballProvider";
 import { createUser } from "../../lib/firebase";
 import { Ionicons } from "@expo/vector-icons";
+import { ScrollView } from "react-native-gesture-handler";
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -23,6 +24,7 @@ export default function SignUpScreen() {
   const [name, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
   const [phone, setPhone] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -47,6 +49,10 @@ export default function SignUpScreen() {
       Alert.alert("Error", "Password must be at least 8 characters");
       return;
     }
+    if (password !== passwordConfirm) {
+      Alert.alert("Error", "Passwords do not match");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -62,7 +68,9 @@ export default function SignUpScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+      <View style={styles.container}>
       <Image source={require("../../assets/images/mini_logo.png")} style={styles.logo} />
       <Text style={styles.title}>Create Account</Text>
       <Text style={styles.subtitle}>Join us to get started</Text>
@@ -122,6 +130,25 @@ export default function SignUpScreen() {
         </TouchableOpacity>
       </View>
 
+      <View style={styles.inputContainer}>
+        <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.icon} />
+        <TextInput
+          style={[styles.input, { flex: 1 }]}
+          placeholder="Password Confirm"
+          placeholderTextColor="#888"
+          secureTextEntry={!showPassword}
+          value={passwordConfirm}
+          onChangeText={setPasswordConfirm}
+        />
+        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+          <Ionicons 
+            name={showPassword ? "eye-off-outline" : "eye-outline"} 
+            size={20} 
+            color="#666"
+          />
+        </TouchableOpacity>
+      </View>
+
       <TouchableOpacity
         style={[styles.button, loading && styles.buttonDisabled]}
         onPress={submit}
@@ -143,6 +170,8 @@ export default function SignUpScreen() {
         </Text>
       </TouchableOpacity>
     </View>
+    </ScrollView>
+    
   );
 }
 

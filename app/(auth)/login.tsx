@@ -23,12 +23,23 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const validateEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
 
   const submit = async () => {
     if (!email || !password) {
       Alert.alert("Error", "Please fill in all fields");
       return;
     }
+    if (!validateEmail(email)) {
+          Alert.alert("Error", "Please enter a valid email");
+          return;
+        }
+        if (password.length < 8) {
+          Alert.alert("Error", "Password must be at least 8 characters");
+          return;
+        }
     setSubmitting(true);
     setError("");
 

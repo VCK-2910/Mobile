@@ -41,6 +41,7 @@ export default function CheckoutScreen() {
   console.log("Selected items:", cart);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
+
   useEffect(() => {
     const keyboardWillShow = Keyboard.addListener('keyboardWillShow', (e) => {
       setKeyboardHeight(e.endCoordinates.height);
@@ -66,6 +67,10 @@ export default function CheckoutScreen() {
     if (!phone || !address) {
       Alert.alert("Thiếu thông tin", "Vui lòng nhập số điện thoại và địa chỉ");
       return;
+    }
+    if (!/^[0-9]{10}$/.test(phone)) {
+          Alert.alert("Error", "Số điện thoại không hợp lệ");
+          return;
     }
     try {
       const user = auth.currentUser;
@@ -99,7 +104,7 @@ export default function CheckoutScreen() {
         style={{flex:1}}
       >
         <View style={styles.headerContainer}>
-          <TouchableOpacity onPress={() => router.back()} style={{ position: "absolute", left: 0 }}>
+          <TouchableOpacity onPress={() => router.back()} >
             <Ionicons name="arrow-back-outline" size={20} />
           </TouchableOpacity>
           <Text style={[styles.header, { flex: 1, textAlign: "center" }]}>Xác nhận đơn hàng</Text>

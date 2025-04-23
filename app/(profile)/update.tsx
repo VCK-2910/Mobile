@@ -1,4 +1,4 @@
-// app/(profile)/update.tsx
+
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -13,12 +13,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useGlobalContext } from "@/context/GloballProvider";
 import { getAuth, updateProfile, updateEmail } from "firebase/auth";
-import {
-  getFirestore,
-  doc,
-  getDoc,
-  setDoc,
-} from "firebase/firestore";
+import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function UpdateProfileScreen() {
   const router = useRouter();
@@ -27,80 +23,103 @@ export default function UpdateProfileScreen() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+  });
+  
+  const { refreshProfile } = useGlobalContext();
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const { user, refreshProfile } = useGlobalContext();
-  // Load current user info
   useEffect(() => {
-    (async () => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
       const user = auth.currentUser;
       if (!user) {
-        Alert.alert("Lỗi", "Chưa đăng nhập.");
+        Alert.alert("Error", "Not logged in");
         router.back();
         return;
       }
-      // Pre-fill from Auth
-      setName(user.displayName || "");
-      setEmail(user.email || "");
-      setPhone(user.phoneNumber || "");
 
-      // Và từ Firestore (nếu bạn có thêm trường custom)
-      const userDocRef = doc(db, "users", user.uid);
-      const snap = await getDoc(userDocRef);
-      if (snap.exists()) {
-        const data = snap.data();
-        if (data.username) setName(data.username);
-        // nếu có các trường khác, map ở đây...
+      // Load data from Auth
+      setFormData({
+        name: user.displayName || "",
+        email: user.email || "",
+        phone: user.phoneNumber || "",
+      });
+
+      // Load additional data from Firestore
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        setFormData(prev => ({
+          ...prev,
+          name: data.username || prev.name,
+          phone: data.phoneNumber || prev.phone,
+        }));
       }
-
+    } catch (error) {
+      console.error("Error loading user data:", error);
+      Alert.alert("Error", "Failed to load user data");
+    } finally {
       setLoading(false);
-    })();
-  }, []);
+    }
+  };
+
+  const validateForm = () => {
+    if (!formData.name.trim() || !formData.email.trim()) {
+      Alert.alert("Error", "Please fill in all required fields");
+      return false;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      Alert.alert("Error", "Please enter a valid email");
+      return false;
+    }
+    if (formData.phone && !/^[0-9]{10}$/.test(formData.phone)) {
+      Alert.alert("Error", "Please enter a valid phone number");
+      return false;
+    }
+    return true;
+  };
 
   const handleSave = async () => {
-    if (!name.trim() || !email.trim()) {
-      Alert.alert("Lỗi", "Vui lòng điền đủ tên và email.");
-      return;
-    }
+    if (!validateForm()) return;
 
     setSaving(true);
     try {
       const user = auth.currentUser!;
-      // 1️⃣ Cập nhật displayName trong Firebase Auth
-      if (name.trim() !== user.displayName) {
-        await updateProfile(user, { displayName: name.trim() });
-      }
-      // 2️⃣ Cập nhật email nếu thay đổi (Firebase sẽ tự hỏi lại đăng nhập nếu cần)
-      if (email.trim() !== user.email) {
-        await updateEmail(user, email.trim());
-      }
-      // 3️⃣ Cập nhật số điện thoại nếu thay đổi (Firebase không hỗ trợ trực tiếp, cập nhật trong Firestore)
-      if (phone.trim() !== user.phoneNumber) {
-        console.warn("Firebase Auth không hỗ trợ cập nhật phoneNumber trực tiếp. Sẽ cập nhật trong Firestore.");
-      }
       
-      // 3️⃣ Cập nhật document trong Firestore
-      const userDocRef = doc(db, "users", user.uid);
+      // Update Auth profile
+      const updates: any = { displayName: formData.name.trim() };
+      await updateProfile(user, updates);
+
+      // Update email if changed
+      if (formData.email.trim() !== user.email) {
+        await updateEmail(user, formData.email.trim());
+      }
+
+      // Update Firestore document
       await setDoc(
-        userDocRef,
+        doc(db, "users", user.uid),
         {
-          username: name.trim(),
-          email: email.trim(),
-          phoneNumber: phone.trim(),
+          username: formData.name.trim(),
+          email: formData.email.trim(),
+          phoneNumber: formData.phone.trim(),
           updatedAt: new Date(),
         },
         { merge: true }
       );
-      await refreshProfile(); // Refresh lại profile từ Firestore
-      Alert
-      .alert("Thành công", "Đã cập nhật thông tin.", [
+
+      await refreshProfile();
+      Alert.alert("Success", "Profile updated successfully", [
         { text: "OK", onPress: () => router.back() },
       ]);
-    } catch (err: any) {
-      console.error("Update profile error:", err);
-      Alert.alert("Lỗi", err.message || "Cập nhật thất bại.");
+    } catch (error: any) {
+      console.error("Update error:", error);
+      Alert.alert("Error", error.message || "Update failed");
     } finally {
       setSaving(false);
     }
@@ -116,87 +135,143 @@ export default function UpdateProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.headerRow}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text>{"←"}</Text>
+      <View style={styles.header}>
+        <TouchableOpacity 
+          onPress={() => router.back()} 
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color="#0B3B5D" />
         </TouchableOpacity>
-        <Text style={styles.header}>Cập nhật thông tin</Text>
+        <Text style={styles.headerTitle}>Update Profile</Text>
       </View>
 
-      <Text style={styles.label}>Tên hiển thị</Text>
-      <TextInput
-        style={styles.input}
-        value={name}
-        onChangeText={setName}
-        placeholder="Nhập tên của bạn"
-        placeholderTextColor="#888"
-      />
+      <View style={styles.form}>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Display Name*</Text>
+          <View style={styles.inputContainer}>
+            <Ionicons name="person-outline" size={20} color="#666" />
+            <TextInput
+              style={styles.input}
+              value={formData.name}
+              onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
+              placeholder="Enter your name"
+            />
+          </View>
+        </View>
 
-      <Text style={styles.label}>Email</Text>
-      <TextInput
-        style={styles.input}
-        value={email}
-        onChangeText={setEmail}
-        placeholder="Nhập email"
-        keyboardType="email-address"
-        placeholderTextColor="#888"
-      />
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Email*</Text>
+          <View style={styles.inputContainer}>
+            <Ionicons name="mail-outline" size={20} color="#666" />
+            <TextInput
+              style={styles.input}
+              value={formData.email}
+              onChangeText={(text) => setFormData(prev => ({ ...prev, email: text }))}
+              placeholder="Enter your email"
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
+        </View>
 
-      <Text style={styles.label}>Phonenumber</Text>
-      <TextInput
-        style={styles.input}
-        value={phone}
-        onChangeText={setPhone}
-        placeholder="Nhập số điện thoại"
-        keyboardType="phone-pad"
-        placeholderTextColor="#888"
-      />
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Phone Number</Text>
+          <View style={styles.inputContainer}>
+            <Ionicons name="call-outline" size={20} color="#666" />
+            <TextInput
+              style={styles.input}
+              value={formData.phone}
+              onChangeText={(text) => setFormData(prev => ({ ...prev, phone: text }))}
+              placeholder="Enter your phone number"
+              keyboardType="phone-pad"
+            />
+          </View>
+        </View>
 
-      <TouchableOpacity
-        style={[styles.button, saving && styles.buttonDisabled]}
-        onPress={handleSave}
-        disabled={saving}
-      >
-        <Text style={styles.buttonText}>
-          {saving ? "Đang lưu..." : "Lưu thay đổi"}
-        </Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+          onPress={handleSave}
+          disabled={saving}
+        >
+          {saving ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <>
+              <Text style={styles.saveButtonText}>Save Changes</Text>
+              <Ionicons name="checkmark" size={24} color="#fff" />
+            </>
+          )}
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#fff" },
-  headerRow: {
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  header: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
   },
   backButton: {
     padding: 8,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    marginLeft: 16,
+    color: "#0B3B5D",
+  },
+  form: {
+    padding: 16,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#333",
+    marginBottom: 8,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    backgroundColor: "#f8f8f8",
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 12,
+    marginLeft: 12,
+    fontSize: 16,
+    color: "#333",
+  },
+  saveButton: {
+    backgroundColor: "#0B3B5D",
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 32,
+  },
+  saveButtonDisabled: {
+    backgroundColor: "#999",
+  },
+  saveButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "600",
     marginRight: 8,
   },
-  header: {
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  label: { fontSize: 16, marginBottom: 6, color: "#333" },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 16,
-    fontSize: 16,
-  },
-  button: {
-    backgroundColor: "#0B3B5D",
-    paddingVertical: 14,
-    borderRadius: 30,
-    alignItems: "center",
-    marginTop: 10,
-  },
-  buttonDisabled: { backgroundColor: "#888" },
-  buttonText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
 });

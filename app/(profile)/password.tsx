@@ -1,4 +1,4 @@
-// app/(profile)/password.tsx
+
 import React, { useState } from "react";
 import {
   View,
@@ -7,60 +7,70 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import {
-  getAuth,
-  EmailAuthProvider,
-  reauthenticateWithCredential,
-  updatePassword,
-} from "firebase/auth";
+import { getAuth, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function ChangePasswordScreen() {
   const router = useRouter();
   const auth = getAuth();
 
-  const [currentPwd, setCurrentPwd] = useState("");
-  const [newPwd, setNewPwd] = useState("");
-  const [confirmPwd, setConfirmPwd] = useState("");
+  const [formData, setFormData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
   const [loading, setLoading] = useState(false);
 
+  const validateForm = () => {
+    if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
+      Alert.alert("Error", "Please fill in all fields");
+      return false;
+    }
+    if (formData.newPassword.length < 8) {
+      Alert.alert("Error", "New password must be at least 8 characters");
+      return false;
+    }
+    if (formData.newPassword !== formData.confirmPassword) {
+      Alert.alert("Error", "New passwords don't match");
+      return false;
+    }
+    return true;
+  };
+
   const handleChange = async () => {
-    if (!currentPwd || !newPwd || !confirmPwd) {
-      Alert.alert("Lỗi", "Vui lòng điền đầy đủ các trường.");
-      return;
-    }
-    if (newPwd !== confirmPwd) {
-      Alert.alert("Lỗi", "Mật khẩu mới và xác nhận không khớp.");
-      return;
-    }
-    if (newPwd.length < 8) {
-      Alert.alert("Lỗi", "Mật khẩu mới phải ít nhất 8 ký tự.");
-      return;
-    }
+    if (!validateForm()) return;
 
     const user = auth.currentUser;
-    if (!user || !user.email) {
-      Alert.alert("Lỗi", "Không tìm thấy người dùng.");
+    if (!user?.email) {
+      Alert.alert("Error", "User not found");
       return;
     }
 
     setLoading(true);
     try {
-      // 1️⃣ Tạo credential từ email + mật khẩu hiện tại
-      const cred = EmailAuthProvider.credential(user.email, currentPwd);
-      // 2️⃣ Xác thực lại
-      await reauthenticateWithCredential(user, cred);
-      // 3️⃣ Cập nhật mật khẩu
-      await updatePassword(user, newPwd);
+      const credential = EmailAuthProvider.credential(
+        user.email,
+        formData.currentPassword
+      );
+      await reauthenticateWithCredential(user, credential);
+      await updatePassword(user, formData.newPassword);
 
-      Alert.alert("Thành công", "Đổi mật khẩu thành công!", [
-        { text: "OK", onPress: () => router.back() },
-      ]);
-    } catch (err: any) {
-      console.log("Change password error:", err);
-      Alert.alert("Lỗi", err.message || "Không thể đổi mật khẩu.");
+      Alert.alert(
+        "Success",
+        "Password changed successfully",
+        [{ text: "OK", onPress: () => router.back() }]
+      );
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "Failed to change password");
     } finally {
       setLoading(false);
     }
@@ -68,47 +78,95 @@ export default function ChangePasswordScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.header}>Thay đổi mật khẩu</Text>
+      <View style={styles.header}>
+        <TouchableOpacity 
+          onPress={() => router.back()} 
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color="#0B3B5D" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Change Password</Text>
+      </View>
 
-      <Text style={styles.label}>Mật khẩu hiện tại</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="********"
-        placeholderTextColor="#888"
-        secureTextEntry
-        value={currentPwd}
-        onChangeText={setCurrentPwd}
-      />
+      <View style={styles.form}>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Current Password</Text>
+          <View style={styles.inputContainer}>
+            <Ionicons name="lock-closed-outline" size={20} color="#666" />
+            <TextInput
+              style={styles.input}
+              secureTextEntry={!showPasswords.current}
+              value={formData.currentPassword}
+              onChangeText={(text) => setFormData(prev => ({ ...prev, currentPassword: text }))}
+              placeholder="Enter current password"
+            />
+            <TouchableOpacity onPress={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}>
+              <Ionicons 
+                name={showPasswords.current ? "eye-off-outline" : "eye-outline"} 
+                size={20} 
+                color="#666" 
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
 
-      <Text style={styles.label}>Mật khẩu mới</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Ít nhất 8 ký tự"
-        placeholderTextColor="#888"
-        secureTextEntry
-        value={newPwd}
-        onChangeText={setNewPwd}
-      />
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>New Password</Text>
+          <View style={styles.inputContainer}>
+            <Ionicons name="lock-closed-outline" size={20} color="#666" />
+            <TextInput
+              style={styles.input}
+              secureTextEntry={!showPasswords.new}
+              value={formData.newPassword}
+              onChangeText={(text) => setFormData(prev => ({ ...prev, newPassword: text }))}
+              placeholder="Minimum 8 characters"
+            />
+            <TouchableOpacity onPress={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}>
+              <Ionicons 
+                name={showPasswords.new ? "eye-off-outline" : "eye-outline"} 
+                size={20} 
+                color="#666" 
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
 
-      <Text style={styles.label}>Xác nhận mật khẩu mới</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Nhập lại mật khẩu"
-        placeholderTextColor="#888"
-        secureTextEntry
-        value={confirmPwd}
-        onChangeText={setConfirmPwd}
-      />
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Confirm New Password</Text>
+          <View style={styles.inputContainer}>
+            <Ionicons name="lock-closed-outline" size={20} color="#666" />
+            <TextInput
+              style={styles.input}
+              secureTextEntry={!showPasswords.confirm}
+              value={formData.confirmPassword}
+              onChangeText={(text) => setFormData(prev => ({ ...prev, confirmPassword: text }))}
+              placeholder="Confirm new password"
+            />
+            <TouchableOpacity onPress={() => setShowPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}>
+              <Ionicons 
+                name={showPasswords.confirm ? "eye-off-outline" : "eye-outline"} 
+                size={20} 
+                color="#666" 
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
 
-      <TouchableOpacity
-        style={[styles.button, loading && styles.buttonDisabled]}
-        onPress={handleChange}
-        disabled={loading}
-      >
-        <Text style={styles.buttonText}>
-          {loading ? "Đang xử lý..." : "Lưu thay đổi"}
-        </Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.saveButton, loading && styles.saveButtonDisabled]}
+          onPress={handleChange}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <>
+              <Text style={styles.saveButtonText}>Change Password</Text>
+              <Ionicons name="checkmark" size={24} color="#fff" />
+            </>
+          )}
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -116,42 +174,68 @@ export default function ChangePasswordScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: "#fff",
   },
   header: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 24,
-    textAlign: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  backButton: {
+    padding: 8,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    marginLeft: 16,
+    color: "#0B3B5D",
+  },
+  form: {
+    padding: 16,
+  },
+  inputGroup: {
+    marginBottom: 20,
   },
   label: {
     fontSize: 16,
-    marginTop: 12,
-    marginBottom: 6,
+    fontWeight: "500",
     color: "#333",
+    marginBottom: 8,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    backgroundColor: "#f8f8f8",
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    flex: 1,
+    paddingVertical: 12,
+    marginLeft: 12,
     fontSize: 16,
+    color: "#333",
   },
-  button: {
-    marginTop: 24,
+  saveButton: {
     backgroundColor: "#0B3B5D",
-    paddingVertical: 14,
-    borderRadius: 30,
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    marginTop: 32,
   },
-  buttonDisabled: {
-    backgroundColor: "#888",
+  saveButtonDisabled: {
+    backgroundColor: "#999",
   },
-  buttonText: {
+  saveButtonText: {
     color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: 18,
+    fontWeight: "600",
+    marginRight: 8,
   },
 });

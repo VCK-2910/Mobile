@@ -11,7 +11,7 @@ const OrderSuccess = () => {
       <Text style={styles.message}>Cảm ơn bạn đã đặt hàng. Đơn hàng của bạn sẽ sớm được giao.</Text>
 
       <TouchableOpacity style={styles.homeButton} onPress={() => router.push("/(tabs)/Cart")}>
-        <Text style={styles.homeText}>Quay về trang chủ</Text>
+        <Text style={styles.homeText}>Quay về</Text>
       </TouchableOpacity>
     </View>
   );
