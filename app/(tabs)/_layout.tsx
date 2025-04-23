@@ -2,9 +2,14 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { View, Text } from 'react-native';
+import { useCart } from '@/context/cartcontext';
 
 
 export default function TabLayout() {
+  const { cart } = useCart();
+  const cartCount = cart.reduce((count, item) => count + item.quantity, 0);
+  console.log("Cart count:", cartCount);
   return (
     <Tabs screenOptions={{
       tabBarActiveTintColor: "#0B3B5D",
@@ -41,13 +46,37 @@ export default function TabLayout() {
           ),
         }} />
       
-        <Tabs.Screen name="Cart" options={{
-          title: 'Cart',
-          headerShown: false,
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'cart' : 'cart-outline'} color={color} size={24} />
-          ),
-        }} />
+      <Tabs.Screen name="Cart"
+              options={({ navigation }) => ({
+                headerShown: false,
+                tabBarIcon: ({ color, focused }) => {
+                  const { cart } = useCart();
+                  const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+                  return (
+                    <View>
+                      <Ionicons name={focused ? 'cart' : 'cart-outline'} size={24} color={color} />
+                      {count > 0 && (
+                        <View style={{
+                          position: 'absolute',
+                          right: -6,
+                          top: -3,
+                          backgroundColor: 'red',
+                          borderRadius: 8,
+                          width: 16,
+                          height: 16,
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                        }}>
+                          <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>
+                            {count}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  );
+                },
+              })}
+            />
       
         <Tabs.Screen name="Profile" options={{
           title: 'Profile',

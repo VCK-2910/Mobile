@@ -28,13 +28,6 @@ const ProfileScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <Text style={styles.header}>Thông tin của bạn</Text>
 
-      {/* Hiển thị tên hoặc email */}
-      {profile && (
-        <Text style={styles.username}>
-          {profile.username ?? profile.email}
-        </Text>
-      )}
-
       <CardFlip frontComponent={<ProfileCard />} backComponent={<QRCard />} />
 
       <Text style={styles.tapText}>Nhấn vào thẻ để tích điểm</Text>

@@ -49,10 +49,12 @@ export default function CartScreen() {
         totalPrice: totalSelected.toString()
       }
     });
+    // Clear selected items after navigation
+    setSelectedIds([]);
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <Text style={styles.header}>Giỏ hàng</Text>
 
       {cart.length === 0 ? (

@@ -16,7 +16,6 @@ const ProfileCard = () => {
         <Text style={styles.name}>
           {profile?.username ?? "Khách"}
         </Text>
-        <Text style={styles.points}>Reward Points: 70.86</Text>
         <Text style={styles.email}>
           {profile?.email ?? ""}
         </Text>

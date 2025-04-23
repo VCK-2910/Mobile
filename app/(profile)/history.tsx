@@ -1,21 +1,32 @@
-// app/(profile)/history.tsx
+
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { auth } from "@/lib/firebase";
 import { fetchUserOrders } from "@/lib/firebase";
+import { Ionicons } from '@expo/vector-icons';
+
+interface OrderItem {
+  name: string;
+  quantity: number;
+  price: number;
+}
 
 interface Order {
   id: string;
-  items: string;     // JSON string
+  items: string;
   total: number;
   status: string;
+  address: string;
+  phone: string;
+  paymentMethod: string;
   createdAt: { seconds: number; nanoseconds: number };
 }
 
 const HistoryScreen: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -34,6 +45,19 @@ const HistoryScreen: React.FC = () => {
     load();
   }, []);
 
+  const toggleOrderDetails = (orderId: string) => {
+    setExpandedOrder(expandedOrder === orderId ? null : orderId);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'pending': return '#f1c40f';
+      case 'completed': return '#2ecc71';
+      case 'cancelled': return '#e74c3c';
+      default: return '#95a5a6';
+    }
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.center}>
@@ -44,26 +68,73 @@ const HistoryScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.header}>Lịch sử thanh toán</Text>
+      <View style={styles.headerContainer}>
+        <Text style={styles.header}>Lịch sử đơn hàng</Text>
+      </View>
+
       {orders.length === 0 ? (
-        <Text style={styles.empty}>Chưa có đơn hàng nào</Text>
+        <View style={styles.emptyContainer}>
+          <Ionicons name="receipt-outline" size={64} color="#ccc" />
+          <Text style={styles.empty}>Chưa có đơn hàng nào</Text>
+        </View>
       ) : (
         <FlatList
           data={orders}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => {
-            const parsed = JSON.parse(item.items);
+            const parsed = JSON.parse(item.items) as OrderItem[];
             const dt = new Date(item.createdAt.seconds * 1000);
+            const isExpanded = expandedOrder === item.id;
+
             return (
-              <View style={styles.card}>
-                <Text style={styles.date}>{dt.toLocaleString()}</Text>
-                <Text style={styles.total}>
-                  Tổng: {item.total.toLocaleString()}₫
-                </Text>
-                <Text>Số món: {parsed.length}</Text>
-                <Text>Trạng thái: {item.status}</Text>
-              </View>
+              <TouchableOpacity 
+                style={styles.card}
+                onPress={() => toggleOrderDetails(item.id)}
+              >
+                <View style={styles.orderHeader}>
+                  <View>
+                    <Text style={styles.date}>{dt.toLocaleString()}</Text>
+                    <Text style={styles.total}>
+                      Tổng: {item.total.toLocaleString()}₫
+                    </Text>
+                  </View>
+                  <View style={styles.statusContainer}>
+                    <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.status) }]} />
+                    <Text style={styles.status}>{item.status}</Text>
+                  </View>
+                </View>
+
+                {isExpanded && (
+                  <View style={styles.details}>
+                    <Text style={styles.detailsHeader}>Chi tiết đơn hàng:</Text>
+                    {parsed.map((orderItem, index) => (
+                      <View key={index} style={styles.itemRow}>
+                        <Text style={styles.itemName}>{orderItem.name}</Text>
+                        <Text style={styles.itemQuantity}>x{orderItem.quantity}</Text>
+                        <Text style={styles.itemPrice}>
+                          {(orderItem.price * orderItem.quantity).toLocaleString()}₫
+                        </Text>
+                      </View>
+                    ))}
+                    <View style={styles.deliveryInfo}>
+                      <Text style={styles.detailsLabel}>Địa chỉ: {item.address}</Text>
+                      <Text style={styles.detailsLabel}>SĐT: {item.phone}</Text>
+                      <Text style={styles.detailsLabel}>
+                        Thanh toán: {item.paymentMethod}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+                
+                <View style={styles.expandButton}>
+                  <Ionicons 
+                    name={isExpanded ? "chevron-up" : "chevron-down"} 
+                    size={20} 
+                    color="#666" 
+                  />
+                </View>
+              </TouchableOpacity>
             );
           }}
         />
@@ -75,17 +146,126 @@ const HistoryScreen: React.FC = () => {
 export default HistoryScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  center:    { flex: 1, justifyContent: "center", alignItems: "center" },
-  header:    { fontSize: 22, fontWeight: "bold", textAlign: "center", marginVertical: 12 },
-  empty:     { textAlign: "center", marginTop: 20, color: "#555" },
-  list:      { paddingHorizontal: 16, paddingBottom: 20 },
-  card: {
-    backgroundColor: "#f7f7f7",
-    marginVertical: 8,
-    padding: 12,
-    borderRadius: 8,
+  container: { 
+    flex: 1, 
+    backgroundColor: "#fff" 
   },
-  date:  { color: "#666", marginBottom: 4 },
-  total: { fontSize: 16, fontWeight: "700", marginBottom: 4 },
+  center: { 
+    flex: 1, 
+    justifyContent: "center", 
+    alignItems: "center" 
+  },
+  headerContainer: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    backgroundColor: "#fff"
+  },
+  header: { 
+    fontSize: 24, 
+    fontWeight: "bold", 
+    color: "#0B3B5D"
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center"
+  },
+  empty: { 
+    textAlign: "center", 
+    marginTop: 12, 
+    color: "#666",
+    fontSize: 16 
+  },
+  list: { 
+    padding: 16
+  },
+  card: {
+    backgroundColor: "#fff",
+    marginBottom: 12,
+    borderRadius: 12,
+    padding: 16,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4
+  },
+  orderHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start"
+  },
+  date: { 
+    color: "#666",
+    fontSize: 14
+  },
+  total: { 
+    fontSize: 16, 
+    fontWeight: "700",
+    marginTop: 4,
+    color: "#0B3B5D"
+  },
+  statusContainer: {
+    flexDirection: "row",
+    alignItems: "center"
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6
+  },
+  status: {
+    fontSize: 14,
+    color: "#666",
+    textTransform: "capitalize"
+  },
+  details: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#eee"
+  },
+  detailsHeader: {
+    fontSize: 15,
+    fontWeight: "600",
+    marginBottom: 8,
+    color: "#444"
+  },
+  itemRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8
+  },
+  itemName: {
+    flex: 1,
+    fontSize: 14,
+    color: "#444"
+  },
+  itemQuantity: {
+    marginHorizontal: 16,
+    color: "#666"
+  },
+  itemPrice: {
+    fontSize: 14,
+    color: "#444",
+    fontWeight: "500"
+  },
+  deliveryInfo: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 8
+  },
+  detailsLabel: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 4
+  },
+  expandButton: {
+    alignItems: "center",
+    marginTop: 8
+  }
 });

@@ -1,5 +1,5 @@
-// checkout.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Keyboard } from "react-native";
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   Alert,
   FlatList,
   Image,
+  KeyboardAvoidingView,
+  Platform
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -37,6 +39,21 @@ export default function CheckoutScreen() {
 
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   console.log("Selected items:", cart);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const keyboardWillShow = Keyboard.addListener('keyboardWillShow', (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+    const keyboardWillHide = Keyboard.addListener('keyboardWillHide', () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
+    };
+  }, []);
 
   function toggleSelect(id: string) {
     setSelectedItems(prev =>
@@ -65,7 +82,8 @@ export default function CheckoutScreen() {
         createdAt: serverTimestamp(),
       });
       
-      selectedItems.forEach(id => removeFromCart(id));
+      // Remove selected items from cart
+      cartItems.forEach(item => removeFromCart(item.foodDocId));
       console.log("Selected items(after):", cart);
       router.replace("/ordersuccess");
     } catch (e: any) {
@@ -75,76 +93,81 @@ export default function CheckoutScreen() {
  
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => router.back()} style={{ position: "absolute", left: 0 }}>
-          <Ionicons name="arrow-back-outline" size={20} />
-        </TouchableOpacity>
-        <Text style={[styles.header, { flex: 1, textAlign: "center" }]}>Xác nhận đơn hàng</Text>
-      </View>
-      <FlatList
-        data={cartItems}
-        keyExtractor={it => it.foodDocId}
-        contentContainerStyle={{ paddingBottom: 20 }}
-        renderItem={({ item }) => {
-          const isSel = selectedItems.includes(item.foodDocId);
-          return (
-            <View style={styles.cartItem}>
-              <Image source={{ uri: item.imageUrl }} style={styles.image} />
-              <View style={styles.info}>
-                <Text style={styles.name}>{item.name}</Text>
-                <Text style={styles.price}>
-                  {item.price.toLocaleString()}₫ x {item.quantity}
-                </Text>
-              </View>
-            </View>
-          );
-        }}
-        style={styles.list}
-      />
-      <View>
-        <Text style={styles.total}>Tổng cộng: {total.toLocaleString()}₫</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Số điện thoại"
-          value={phone}
-          onChangeText={setPhone}
-          keyboardType="phone-pad"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Địa chỉ giao hàng"
-          value={address}
-          onChangeText={setAddress}
-          keyboardType="default"
-        />
-
-        <View style={styles.payMethods}>
-          {["Tiền mặt", "Chuyển khoản"].map(m => (
-            <TouchableOpacity
-              key={m}
-              style={[
-                styles.payBtn,
-                paymentMethod === m && styles.payBtnActive,
-              ]}
-              onPress={() => setPaymentMethod(m as "Tiền mặt" | "Chuyển khoản")}
-            >
-              <Text
-                style={[
-                  styles.payText,
-                  paymentMethod === m && { color: "#fff" },
-                ]}
-              >
-                {m}
-              </Text>
-            </TouchableOpacity>
-          ))}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={keyboardHeight}
+        style={{flex:1}}
+      >
+        <View style={styles.headerContainer}>
+          <TouchableOpacity onPress={() => router.back()} style={{ position: "absolute", left: 0 }}>
+            <Ionicons name="arrow-back-outline" size={20} />
+          </TouchableOpacity>
+          <Text style={[styles.header, { flex: 1, textAlign: "center" }]}>Xác nhận đơn hàng</Text>
         </View>
+        <FlatList
+          data={cartItems}
+          keyExtractor={it => it.foodDocId}
+          contentContainerStyle={{ paddingBottom: 20 }}
+          renderItem={({ item }) => {
+            const isSel = selectedItems.includes(item.foodDocId);
+            return (
+              <View style={styles.cartItem}>
+                <Image source={{ uri: item.imageUrl }} style={styles.image} />
+                <View style={styles.info}>
+                  <Text style={styles.name}>{item.name}</Text>
+                  <Text style={styles.price}>
+                    {item.price.toLocaleString()}₫ x {item.quantity}
+                  </Text>
+                </View>
+              </View>
+            );
+          }}
+          style={styles.list}
+        />
+        <View style={{ paddingBottom: keyboardHeight }}> {/* Add padding to prevent keyboard from covering content */}
+          <Text style={styles.total}>Tổng cộng: {total.toLocaleString()}₫</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Số điện thoại"
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Địa chỉ giao hàng"
+            value={address}
+            onChangeText={setAddress}
+            keyboardType="default"
+          />
 
-        <TouchableOpacity style={styles.orderBtn} onPress={handleOrder}>
-          <Text style={styles.orderText}>Đặt hàng</Text>
-        </TouchableOpacity>
-      </View>
-      
+          <View style={styles.payMethods}>
+            {["Tiền mặt", "Chuyển khoản"].map(m => (
+              <TouchableOpacity
+                key={m}
+                style={[
+                  styles.payBtn,
+                  paymentMethod === m && styles.payBtnActive,
+                ]}
+                onPress={() => setPaymentMethod(m as "Tiền mặt" | "Chuyển khoản")}
+              >
+                <Text
+                  style={[
+                    styles.payText,
+                    paymentMethod === m && { color: "#fff" },
+                  ]}
+                >
+                  {m}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <TouchableOpacity style={styles.orderBtn} onPress={handleOrder}>
+            <Text style={styles.orderText}>Đặt hàng</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -197,5 +220,3 @@ const styles = StyleSheet.create({
   name: { fontSize: 16, fontWeight: "500" },
   price: { fontSize: 14, color: "#555" },
 });
-
-
