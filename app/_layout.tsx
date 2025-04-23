@@ -1,39 +1,49 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
+import React, { useCallback } from "react";
+import { SplashScreen, Stack } from "expo-router";
+import "react-native-url-polyfill/auto";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { CartProvider } from "@/context/cartcontext";
+import { GlobalProvider, useGlobalContext } from "../context/GloballProvider";
+import { StatusBar } from "expo-status-bar";
+import { View } from "react-native";
 
-import { useColorScheme } from '@/hooks/useColorScheme';
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
+// ✋ giữ splash
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
+function AppContent() {
+  const { loading } = useGlobalContext();
 
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
+  const onLayoutRootView = useCallback(async () => {
+    if (!loading) {
+      await SplashScreen.hideAsync(); // ✅ chỉ ẩn splash khi context xong
     }
-  }, [loaded]);
+  }, [loading]);
 
-  if (!loaded) {
-    return null;
-  }
+  if (loading) return null; // ⏳ vẫn đang check login → giữ splash
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+      <CartProvider>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          <Stack.Screen name="(checkout)" options={{ headerShown: false }} />
+          <Stack.Screen name="(profile)" options={{ headerShown: false }} />
+          <Stack.Screen name="noti" options={{ headerShown: false }} />
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+        </Stack>
+        <StatusBar backgroundColor="auto" style="auto" />
+      </CartProvider>
+    </View>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <GlobalProvider>
+        <AppContent />
+      </GlobalProvider>
+    </GestureHandlerRootView>
   );
 }

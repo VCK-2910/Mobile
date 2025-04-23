@@ -4,38 +4,39 @@
     "slug": "StickerSmash",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "icon": "./assets/images/logo_lms.png",
+    "scheme": "LMS",
     "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/images/logo_lms.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "package": "com.SVN.LMS"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/logo_lms.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.SVN.LMS"
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/logo_lms.png"
     },
     "plugins": [
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
-        }
-      ]
+      "expo-router", 
+      "expo-font",
+      "@react-native-firebase/app"
     ],
     "experiments": {
       "typedRoutes": true
     }
+   
   }
 }
