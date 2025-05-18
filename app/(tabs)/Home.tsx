@@ -136,7 +136,7 @@ export default function HomeScreen() {
                 <Feather name="map-pin" size={20} color="#0B3B5D" />
                 <View style={styles.infoTextContainer}>
                   <Text style={styles.infoLabel}>Địa chỉ:</Text>
-                  <Text style={styles.infoValue}>123 Đường ABC, Quận 1, TP.HCM</Text>
+                  <Text style={styles.infoValue}>231 Tô Hiệu, P. Dịch Vọng, Quận Cầu Giấy, Hà Nội</Text>
                 </View>
               </View>
             </View>

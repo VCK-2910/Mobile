@@ -1,19 +1,18 @@
 
-import { Text, View, StyleSheet, Image, TouchableOpacity, StatusBar } from "react-native";
+import { Text, View, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect, router } from "expo-router";
 import Loader from "../components/Loader";
 import 'react-native-gesture-handler';
 import 'react-native-url-polyfill/auto';
 import { SafeAreaView } from "react-native-safe-area-context";
-import React, { useState } from "react";
+import React from "react";
 import { useGlobalContext } from "@/context/GloballProvider";
 
-const Welcome: React.FC = () => {
+export default function Page() {
   const { loading, isLogged } = useGlobalContext();
 
   if (!loading && isLogged) return <Redirect href="/(tabs)/Home" />;
-  if (!loading && !isLogged) return <Redirect href="/(auth)/login" />;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -48,10 +47,6 @@ const Welcome: React.FC = () => {
     </View>
       )}
     </SafeAreaView>
-
-
-
-    
   );
 }
 
@@ -118,4 +113,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-export default Welcome;

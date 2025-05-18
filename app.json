@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "StickerSmash",
-    "slug": "StickerSmash",
+    "slug": "",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo_lms.png",
@@ -12,7 +12,6 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "package": "com.SVN.LMS"
@@ -30,13 +29,12 @@
       "favicon": "./assets/images/logo_lms.png"
     },
     "plugins": [
-      "expo-router", 
+      "expo-router",
       "expo-font",
-      "@react-native-firebase/app"
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
     }
-   
   }
 }

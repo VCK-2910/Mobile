@@ -38,7 +38,7 @@ export default function BookingHistoryScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
         <Ionicons name="arrow-back" size={22} color="#333" />
     </TouchableOpacity>
-            <Text style={styles.title}>Thông tin đặt hàng</Text>
+          <Text style={styles.title}>Thông tin đặt bàn</Text>
         </View>
 
       {loading ? (

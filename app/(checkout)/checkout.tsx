@@ -14,10 +14,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { auth, db } from "@/lib/firebase";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { useCart, CartItem } from "@/context/cartcontext";
 import { Ionicons } from "@expo/vector-icons";
+import { auth, db } from "@/lib/firebase";
+import { CartItem, useCart } from "@/context/cartcontext";
 
 
 export default function CheckoutScreen() {

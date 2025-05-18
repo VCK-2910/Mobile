@@ -11,9 +11,10 @@ import {
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
+
+import { Ionicons } from "@expo/vector-icons";
 import { useGlobalContext } from "@/context/GloballProvider";
 import { login } from "@/lib/firebase";
-import { Ionicons } from "@expo/vector-icons";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -115,10 +116,7 @@ export default function LoginScreen() {
         style={styles.googleButton}
         onPress={() => Alert.alert("Coming Soon", "Google Sign-In will be available soon!")}
       >
-        <Image 
-          source={{ uri: "https://www.google.com.vn/url?sa=i&url=https%3A%2F%2Fsimilarpng.com%2Fillustration-of-google-icon-on-transparent-background-png%2F&psig=AOvVaw2KGzwZZzdTTXqMNVb7cqp5&ust=1745446822168000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCLjgranW7IwDFQAAAAAdAAAAABAE" }}
-          style={styles.googleIcon}
-        />
+
         <Text style={styles.googleButtonText}>Continue with Google</Text>
       </TouchableOpacity>
 

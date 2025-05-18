@@ -32,7 +32,7 @@ function AppContent() {
           <Stack.Screen name="noti" options={{ headerShown: false }} />
           <Stack.Screen name="index" options={{ headerShown: false }} />
         </Stack>
-        <StatusBar backgroundColor="auto" style="auto" />
+        <StatusBar style="auto" />
       </CartProvider>
     </View>
   );
