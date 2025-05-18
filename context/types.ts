@@ -1,5 +1,6 @@
 // types.ts
 export interface FoodDoc {
+    id: string;
     $id: string;
     namefood: string;
     price: number;

@@ -1,12 +1,11 @@
-
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions, FlatList, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useGlobalContext } from '@/context/GloballProvider';
-import { getDocs, query, where } from 'firebase/firestore';
-import { menuCol } from '@/lib/firebase';
+import { getDocs, query, where, collection } from 'firebase/firestore';
+import { menuCol, db, auth } from '@/lib/firebase';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
@@ -22,7 +21,28 @@ export default function HomeScreen() {
   const { profile } = useGlobalContext();
   const [specialFoods, setSpecialFoods] = useState<Food[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [unreadCount, setUnreadCount] = useState(0);
   const userName = profile?.username || 'Khách';
+
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      if (!auth.currentUser) return;
+      const q = query(
+        collection(db, "noti"),
+        where("userId", "==", auth.currentUser.uid),
+        where("read", "==", false)
+      );
+      const snap = await getDocs(q);
+      setUnreadCount(snap.size);
+    };
+
+    fetchUnreadCount();
+
+    // Định kỳ cập nhật số lượng thông báo mỗi 1 giây
+    const intervalId = setInterval(fetchUnreadCount, 1000);
+
+    return () => clearInterval(intervalId);
+  }, []);
 
   const handleBookingPress = () => router.push('/(tabs)/Booking');
   const handleMenuPress = () => router.push('/(tabs)/Menu');
@@ -60,7 +80,14 @@ export default function HomeScreen() {
               <Text style={styles.userName}>{userName}</Text>
             </View>
             <TouchableOpacity onPress={handleNotificationPress} style={styles.notificationButton}>
-              <Feather name="bell" size={24} color="#fff" />
+              <View>
+                <Feather name="bell" size={24} color="#fff" />
+                {unreadCount > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{unreadCount}</Text>
+                  </View>
+                )}
+              </View>
             </TouchableOpacity>
           </View>
         </LinearGradient>
@@ -72,7 +99,7 @@ export default function HomeScreen() {
           </View>
 
           <View style={styles.actionCards}>
-            <TouchableOpacity style={styles.card} onPress={handleBookingPress}>
+            <TouchableOpacity onPress={handleBookingPress} style={styles.card}>
               <View style={styles.cardIcon}>
                 <Feather name="calendar" size={28} color="#0B3B5D" />
               </View>
@@ -80,7 +107,7 @@ export default function HomeScreen() {
               <Text style={styles.cardDescription}>Đặt bàn cho bữa ăn sắp tới</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.card} onPress={handleMenuPress}>
+            <TouchableOpacity onPress={handleMenuPress} style={styles.card}>
               <View style={styles.cardIcon}>
                 <Feather name="list" size={28} color="#0B3B5D" />
               </View>
@@ -314,5 +341,20 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#0B3B5D',
     fontWeight: '500',
+  },
+  badge: {
+    position: 'absolute',
+    right: -5,
+    top: -5,
+    backgroundColor: '#ff3b30',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 12,
   },
 });

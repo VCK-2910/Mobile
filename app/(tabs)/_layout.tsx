@@ -7,9 +7,6 @@ import { useCart } from '@/context/cartcontext';
 
 
 export default function TabLayout() {
-  const { cart } = useCart();
-  const cartCount = cart.reduce((count, item) => count + item.quantity, 0);
-  console.log("Cart count:", cartCount);
   return (
     <Tabs screenOptions={{
       tabBarActiveTintColor: "#0B3B5D",

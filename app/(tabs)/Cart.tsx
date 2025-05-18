@@ -38,7 +38,8 @@ export default function CartScreen() {
 
   const handleCheckout = () => {
     if (!selectedItems.length) {
-      Alert.alert("Chưa chọn món", "Vui lòng tích chọn ít nhất một món để thanh toán.");
+      Alert.alert("Chưa chọn món", 
+        "Vui lòng tích chọn ít nhất một món để thanh toán.");
       return;
     }
     // Đưa qua màn Checkout

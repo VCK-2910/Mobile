@@ -10,7 +10,7 @@ const NotiLayout = () => {
         <Stack.Screen name="Notifications" options={{ headerShown: false,}}/>
       </Stack>
 
-      <StatusBar backgroundColor="auto" style="auto" />
+      <StatusBar backgroundColor="#161622" style="dark" />
     </>
   );
 };

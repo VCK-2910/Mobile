@@ -34,9 +34,6 @@ export default function FoodDetailSheet({ item }: { item: FoodItem }) {
   };
 
   const handleAddToCart = (event: any) => {
-    const { pageX, pageY } = event.nativeEvent;
-    setAnimationStartPos({ x: pageX, y: pageY });
-    setShowAnimation(true);
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 

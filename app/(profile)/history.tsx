@@ -1,10 +1,10 @@
-
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native";
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { auth } from "@/lib/firebase";
-import { fetchUserOrders } from "@/lib/firebase";
+import { fetchUserOrders, cancelOrder } from "@/lib/firebase";
 import { Ionicons } from '@expo/vector-icons';
+import { count } from "firebase/firestore";
 
 interface OrderItem {
   name: string;
@@ -26,6 +26,21 @@ interface Order {
 const HistoryScreen: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const user = auth.currentUser;
+
+  const handleCancelOrder = async (orderId: string) => {
+    try {
+      await cancelOrder(orderId);
+      setOrders(orders.map(order => 
+        order.id === orderId 
+          ? {...order, status: 'cancelled'} 
+          : order
+      ));
+      Alert.alert('Thành công', 'Đã hủy đơn hàng');
+    } catch (error) {
+      Alert.alert('Lỗi', 'Không thể hủy đơn hàng');
+    }
+  };
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
   useEffect(() => {
@@ -44,6 +59,7 @@ const HistoryScreen: React.FC = () => {
     };
     load();
   }, []);
+  
 
   const toggleOrderDetails = (orderId: string) => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
@@ -52,7 +68,7 @@ const HistoryScreen: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'pending': return '#f1c40f';
-      case 'completed': return '#2ecc71';
+      case 'paid': return '#2ecc71';
       case 'cancelled': return '#e74c3c';
       default: return '#95a5a6';
     }
@@ -107,6 +123,14 @@ const HistoryScreen: React.FC = () => {
 
                 {isExpanded && (
                   <View style={styles.details}>
+                    {item.status !== 'cancelled' && item.status !== 'Paid' && (
+                      <TouchableOpacity 
+                        style={styles.cancelButton}
+                        onPress={() => handleCancelOrder(item.id)}
+                      >
+                        <Text style={styles.cancelButtonText}>Hủy đơn hàng</Text>
+                      </TouchableOpacity>
+                    )}
                     <Text style={styles.detailsHeader}>Chi tiết đơn hàng:</Text>
                     {parsed.map((orderItem, index) => (
                       <View key={index} style={styles.itemRow}>
@@ -126,7 +150,7 @@ const HistoryScreen: React.FC = () => {
                     </View>
                   </View>
                 )}
-                
+
                 <View style={styles.expandButton}>
                   <Ionicons 
                     name={isExpanded ? "chevron-up" : "chevron-down"} 
@@ -190,6 +214,17 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4
+  },
+  cancelButton: {
+    backgroundColor: '#ff4444',
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 12
+  },
+  cancelButtonText: {
+    color: '#fff',
+    textAlign: 'center',
+    fontSize: 14,
   },
   orderHeader: {
     flexDirection: "row",

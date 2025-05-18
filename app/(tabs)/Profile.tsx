@@ -16,7 +16,7 @@ const ProfileScreen = () => {
     try {
       await logout();
       setUser(null);
-      router.replace("/(auth)/login");
+      router.push("/(auth)/login");
     } catch (err: any) {
       console.error("Logout error:", err);
     }

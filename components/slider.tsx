@@ -28,13 +28,25 @@ const SliderComponent: React.FC = () => {
 
   /* ---------- auto‑scroll ---------- */
   useEffect(() => {
-    const timer = setInterval(() => {
-      const next = (index + 1) % DATA.length;
-      listRef.current?.scrollToIndex({ index: next, animated: true });
-      setIndex(next);
-    }, 6000);
+      let timer: NodeJS.Timeout | number;
+    // Delay the start of auto-scroll
+    const startTimer = () => {
+      timer = setInterval(() => {
+        const next = (index + 1) % DATA.length;
+        if (listRef.current) {
+          listRef.current.scrollToIndex({ index: next, animated: true });
+          setIndex(next);
+        }
+      }, 6000);
+    };
 
-    return () => clearInterval(timer);
+    // Start timer after a brief delay
+    const timeoutId = setTimeout(startTimer, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(timer);
+    };
   }, [index]);
 
   /* ---------- helper để tránh crash scrollToIndex ---------- */

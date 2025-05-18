@@ -14,7 +14,7 @@ const ProfileLayout = () => {
         <Stack.Screen name="update" options={{ headerShown: false }} />
       </Stack>
 
-      <StatusBar backgroundColor="auto" style="auto" />
+      <StatusBar backgroundColor="auto" style="dark" />
     </>
   );
 };

@@ -54,11 +54,10 @@ export default function MenuScreen() {
             }
           }
           return {
+            id: docSnap.id,
             $id: docSnap.id,
             namefood: data.namefood,
-            cost: data.price ?? 0,
             category: data.category,
-            image: imageUrl,
             price: data.price ?? 0,
             imageUrl: imageUrl,
           } as FoodDoc;

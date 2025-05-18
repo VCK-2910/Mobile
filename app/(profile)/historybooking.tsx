@@ -34,13 +34,15 @@ export default function BookingHistoryScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.titlecontainer}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-        <Ionicons name="arrow-back" size={22} color="#333" />
-    </TouchableOpacity>
-          <Text style={styles.title}>Thông tin đặt bàn</Text>
-        </View>
-
+      <View style={styles.header}>
+                    <TouchableOpacity 
+                      onPress={() => router.back()} 
+                      style={styles.backButton}
+                    >
+                      <Ionicons name="arrow-back" size={24} color="#0B3B5D" />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Lịch sử đặt bàn</Text>
+      </View>
       {loading ? (
         <ActivityIndicator style={styles.loader} size="large" color="#0B3B5D" />
       ) : bookings.length > 0 ? (
@@ -62,10 +64,24 @@ export default function BookingHistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f8f8', padding: 16 },
-  header: { fontSize: 24, fontWeight: 'bold', color: '#0B3B5D', marginBottom: 16, textAlign: 'center' },
+  container: { flex: 1, backgroundColor: '#fff' },
+   header: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  backButton: {
+    padding: 8,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#0B3B5D",
+  },
   loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  list: { paddingBottom: 20 },
+  list: { paddingVertical: 16, paddingHorizontal: 16 },
   card: {
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -83,11 +99,9 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 16, color: '#666', marginTop: 12 },
   titlecontainer: { 
     flexDirection: "row", 
-    alignItems: "center", 
-    justifyContent: "center", 
-    marginBottom: 20  },
-  backButton: {
-    padding: 0, 
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20
   },
-  title: { fontSize: 22, fontWeight: "bold", textAlign: "center", flex:1}, // Added title style
+  title: { fontSize: 22, fontWeight: "bold", textAlign: "center", flex: 1 },
 });

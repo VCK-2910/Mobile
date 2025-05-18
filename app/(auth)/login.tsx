@@ -63,8 +63,8 @@ export default function LoginScreen() {
         source={require("../../assets/images/mini_logo.png")}
         style={styles.logo}
       />
-      <Text style={styles.title}>Welcome Back</Text>
-      <Text style={styles.subtitle}>Sign in to continue</Text>
+      <Text style={styles.title}>Chào mừng trở lại</Text>
+      <Text style={styles.subtitle}>Đăng nhập để tiếp tục</Text>
 
       <View style={styles.inputContainer}>
         <Ionicons name="mail-outline" size={20} color="#666" style={styles.icon} />

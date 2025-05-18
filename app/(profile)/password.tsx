@@ -141,6 +141,7 @@ export default function ChangePasswordScreen() {
               value={formData.confirmPassword}
               onChangeText={(text) => setFormData(prev => ({ ...prev, confirmPassword: text }))}
               placeholder="Confirm new password"
+              placeholderTextColor="#888"
             />
             <TouchableOpacity onPress={() => setShowPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}>
               <Ionicons 
@@ -179,7 +180,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
+    padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
   },
@@ -189,7 +190,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: "600",
-    marginLeft: 16,
     color: "#0B3B5D",
   },
   form: {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Keyboard } from "react-native";
+import * as Location from 'expo-location';
 import {
   View,
   Text,
@@ -42,12 +43,16 @@ export default function CheckoutScreen() {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
 
+  const [scrollEnabled, setScrollEnabled] = useState(false);
+
   useEffect(() => {
     const keyboardWillShow = Keyboard.addListener('keyboardWillShow', (e) => {
       setKeyboardHeight(e.endCoordinates.height);
+      setScrollEnabled(true);
     });
     const keyboardWillHide = Keyboard.addListener('keyboardWillHide', () => {
       setKeyboardHeight(0);
+      setScrollEnabled(false);
     });
 
     return () => {
@@ -72,19 +77,33 @@ export default function CheckoutScreen() {
           Alert.alert("Error", "Số điện thoại không hợp lệ");
           return;
     }
+    if (address.trim().length < 5) {
+    Alert.alert("Lỗi", "Vui lòng nhập địa chỉ hợp lệ");
+    return;
+    }
     try {
       const user = auth.currentUser;
       if (!user) throw new Error("Bạn chưa đăng nhập");
 
-      await addDoc(collection(db, "orders"), {
+      const orderRef = await addDoc(collection(db, "orders"), {
         userId: user.uid,
         items: JSON.stringify(cartItems),
         total,
         paymentMethod,
         phone,
         address,
-        status: "pending",
+        status: paymentMethod === "Tiền mặt" ? "Paid" : "pending",
         createdAt: serverTimestamp(),
+      });
+
+      // Add notification for the order
+      await addDoc(collection(db, "noti"), {
+        userId: user.uid,
+        title: `Đơn hàng #${Math.floor(Math.random() * 1000)} đã được đặt`,
+        message: `Đơn hàng ${total.toLocaleString()}₫ - ${paymentMethod}`,
+        time: serverTimestamp(),
+        read: false,
+        type: 'order'
       });
       
       // Remove selected items from cart
@@ -114,15 +133,12 @@ export default function CheckoutScreen() {
           keyExtractor={it => it.foodDocId}
           contentContainerStyle={{ paddingBottom: 20 }}
           renderItem={({ item }) => {
-            const isSel = selectedItems.includes(item.foodDocId);
             return (
               <View style={styles.cartItem}>
                 <Image source={{ uri: item.imageUrl }} style={styles.image} />
                 <View style={styles.info}>
                   <Text style={styles.name}>{item.name}</Text>
-                  <Text style={styles.price}>
-                    {item.price.toLocaleString()}₫ x {item.quantity}
-                  </Text>
+                  <Text style={styles.price}>{item.price.toLocaleString()}₫ x {item.quantity}</Text>
                 </View>
               </View>
             );
@@ -134,17 +150,45 @@ export default function CheckoutScreen() {
           <TextInput
             style={styles.input}
             placeholder="Số điện thoại"
+            placeholderTextColor={"#999"}
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Địa chỉ giao hàng"
-            value={address}
-            onChangeText={setAddress}
-            keyboardType="default"
-          />
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.addressInput}
+              placeholder="Địa chỉ giao hàng"
+              placeholderTextColor={"#999"}
+              value={address}
+              onChangeText={setAddress}
+              keyboardType="default"
+            />
+            <TouchableOpacity 
+              style={styles.locationButton}
+              onPress={async () => {
+                let { status } = await Location.requestForegroundPermissionsAsync();
+                if (status !== 'granted') {
+                  Alert.alert('Permission denied', 'Không thể lấy vị trí hiện tại');
+                  return;
+                }
+
+                let currentLocation = await Location.getCurrentPositionAsync({});
+                let addressResponse = await Location.reverseGeocodeAsync({
+                  latitude: currentLocation.coords.latitude,
+                  longitude: currentLocation.coords.longitude,
+                });
+                
+                if (addressResponse[0]) {
+                  const addr = addressResponse[0];
+                  const fullAddress = [addr.name, addr.street, addr.district, addr.city, addr.region].filter(Boolean).join(", ");
+                  setAddress(fullAddress);
+                }
+              }}
+            >
+              <Ionicons name="location" size={24} color="#0B3B5D" />
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.payMethods}>
             {["Tiền mặt", "Chuyển khoản"].map(m => (
@@ -188,6 +232,22 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   total: { fontSize: 18, fontWeight: "bold", textAlign: "right", marginBottom: 12 },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  addressInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 10,
+  },
+  locationButton: {
+    padding: 10,
+    marginLeft: 8,
+  },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",

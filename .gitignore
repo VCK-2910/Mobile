@@ -38,3 +38,4 @@ yarn-error.*
 app-example
 # Android
 *.json
+lms-7b724-firebase-adminsdk-fbsvc-e1ed6d8492.json

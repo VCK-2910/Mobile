@@ -14,7 +14,7 @@ import {
 } from 'react-native';import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth, bookingCol } from '@/lib/firebase';
 import { Feather } from '@expo/vector-icons';
 
@@ -73,6 +73,13 @@ export default function BookingScreen() {
       return;
     }
 
+    // Check if time is within 9:00–21:00
+  const bookingHour = time.getHours();
+  if (bookingHour < 9 || bookingHour > 21) {
+    Alert.alert('Lỗi', 'Chỉ có thể đặt bàn từ 9:00 đến 21:00');
+    return;
+  }
+
     // Check if date is in the future
     const now = new Date();
       const bookingDate = new Date(date);
@@ -82,7 +89,7 @@ export default function BookingScreen() {
 
     setLoading(true);
     try {
-      await addDoc(bookingCol, {
+      const bookingRef = await addDoc(bookingCol, {
         userId: user.uid,
         date: date.toISOString().split('T')[0],
         time: formatTime(time),
@@ -91,6 +98,17 @@ export default function BookingScreen() {
         createdAt: new Date(),
         status: 'pending',
       });
+
+      // Add notification for the booking
+      await addDoc(collection(db, "noti"), {
+        userId: user.uid,
+        title: `Đặt bàn #${Math.floor(Math.random() * 1000)}`,
+        message: `Đặt bàn cho ${guests} người vào ngày ${formatDate(date)} lúc ${formatTime(time)}`,
+        time: serverTimestamp(),
+        read: false,
+        type: 'booking'
+      });
+
       Alert.alert(
         'Đặt bàn thành công!', 
         `Chúng tôi đã nhận được đơn đặt bàn của bạn vào ngày ${formatDate(date)} lúc ${formatTime(time)} cho ${guests} người. Nhà hàng sẽ liên hệ với bạn để xác nhận.`,
