@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions, FlatList, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -7,21 +7,28 @@ import { useGlobalContext } from '@/context/GloballProvider';
 import { getDocs, query, where, collection } from 'firebase/firestore';
 import { menuCol, db, auth } from '@/lib/firebase';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Modalize } from 'react-native-modalize';
+import FoodDetailSheet from '@/components/FoodDetailSheet';
+import { FoodDoc } from '@/context/types';
 
 const { width } = Dimensions.get('window');
 
 interface Food {
   id: string;
+  $id: string;
   namefood: string;
-  imageUrl?: string;
+  imageUrl: string;
+  price: number;
 }
 
 export default function HomeScreen() {
+  const modalizeRef = useRef<Modalize>(null);
   const router = useRouter();
   const { profile } = useGlobalContext();
   const [specialFoods, setSpecialFoods] = useState<Food[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [selectedItem, setSelectedItem] = useState<Food | null>(null);
   const userName = profile?.username || 'Khách';
 
   useEffect(() => {
@@ -48,6 +55,11 @@ export default function HomeScreen() {
   const handleMenuPress = () => router.push('/(tabs)/Menu');
   const handleNotificationPress = () => router.push('/noti/Notifications');
 
+   const openDetail = (item: Food) => {
+      setSelectedItem(item);
+      modalizeRef.current?.open();
+    };
+
   useEffect(() => {
     (async () => {
       try {
@@ -55,8 +67,10 @@ export default function HomeScreen() {
         const snap = await getDocs(q);
         const foods = snap.docs.map(doc => ({
           id: doc.id,
+          $id: doc.id, // Using doc.id as $id
           namefood: doc.data().namefood,
-          imageUrl: doc.data().imageUrl,
+          imageUrl: doc.data().imageUrl || '', // Provide default empty string
+          price: doc.data().price || 0, // Adding price with a default value
         }));
         setSpecialFoods(foods);
       } catch (err) {
@@ -128,7 +142,7 @@ export default function HomeScreen() {
                 keyExtractor={item => item.id}
                 contentContainerStyle={styles.foodList}
                 renderItem={({ item }) => (
-                  <TouchableOpacity style={styles.foodItem}>
+                  <TouchableOpacity style={styles.foodItem} onPress={() => openDetail(item as Food)}>
                     {item.imageUrl ? (
                       <Image source={{ uri: item.imageUrl }} style={styles.foodImage} />
                     ) : (
@@ -156,7 +170,7 @@ export default function HomeScreen() {
                 <Feather name="phone" size={20} color="#0B3B5D" />
                 <View style={styles.infoTextContainer}>
                   <Text style={styles.infoLabel}>Điện thoại:</Text>
-                  <Text style={styles.infoValue}>0123 456 789</Text>
+                  <Text style={styles.infoValue}>038 655 0869</Text>
                 </View>
               </View>
               <View style={styles.infoRow}>
@@ -169,6 +183,10 @@ export default function HomeScreen() {
             </View>
           </View>
         </View>
+
+        <Modalize ref={modalizeRef} adjustToContentHeight>
+                {selectedItem && <FoodDetailSheet item={selectedItem} />}
+        </Modalize>
       </ScrollView>
     </SafeAreaView>
   );

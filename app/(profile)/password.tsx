@@ -99,6 +99,7 @@ export default function ChangePasswordScreen() {
               value={formData.currentPassword}
               onChangeText={(text) => setFormData(prev => ({ ...prev, currentPassword: text }))}
               placeholder="Enter current password"
+              placeholderTextColor="#888"
             />
             <TouchableOpacity onPress={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}>
               <Ionicons 
@@ -120,6 +121,7 @@ export default function ChangePasswordScreen() {
               value={formData.newPassword}
               onChangeText={(text) => setFormData(prev => ({ ...prev, newPassword: text }))}
               placeholder="Minimum 8 characters"
+              placeholderTextColor="#888"
             />
             <TouchableOpacity onPress={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}>
               <Ionicons 
